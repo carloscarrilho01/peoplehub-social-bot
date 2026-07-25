@@ -30,29 +30,45 @@ export function montarLegenda(post) {
   return t.length > 1024 ? t.slice(0, 1020) + '…' : t
 }
 
-// Envia a arte (bytes) com os botões Aprovar/Reprovar. Retorna { chatId, messageId }.
-export async function enviarArte(buffer, post) {
-  const form = new FormData()
-  form.append('chat_id', chatId())
-  form.append('caption', montarLegenda(post))
-  form.append('parse_mode', 'HTML')
-  form.append(
-    'reply_markup',
-    JSON.stringify({
-      inline_keyboard: [
-        [
-          { text: '✅ Aprovar', callback_data: `ap:${post.id}` },
-          { text: '❌ Reprovar', callback_data: `rp:${post.id}` },
+// Envia a arte (bytes) com os botões Aprovar/Reprovar. Retorna { chatId,
+// messageId }. Tenta algumas vezes: o Telegram às vezes devolve 5xx/timeout
+// transitório em uploads.
+export async function enviarArte(buffer, post, tentativas = 3) {
+  const montarForm = () => {
+    const form = new FormData()
+    form.append('chat_id', chatId())
+    form.append('caption', montarLegenda(post))
+    form.append('parse_mode', 'HTML')
+    form.append(
+      'reply_markup',
+      JSON.stringify({
+        inline_keyboard: [
+          [
+            { text: '✅ Aprovar', callback_data: `ap:${post.id}` },
+            { text: '❌ Reprovar', callback_data: `rp:${post.id}` },
+          ],
         ],
-      ],
-    })
-  )
-  form.append('photo', new Blob([new Uint8Array(buffer)], { type: 'image/jpeg' }), `${post.id}.jpg`)
+      })
+    )
+    form.append('photo', new Blob([new Uint8Array(buffer)], { type: 'image/jpeg' }), `${post.id}.jpg`)
+    return form
+  }
 
-  const r = await fetch(api('sendPhoto'), { method: 'POST', body: form })
-  const j = await r.json()
-  if (!r.ok || !j.ok) throw new Error(`sendPhoto: ${JSON.stringify(j).slice(0, 200)}`)
-  return { chatId: j.result.chat.id, messageId: j.result.message_id }
+  let ultimoErro = 'desconhecido'
+  for (let i = 1; i <= tentativas; i++) {
+    try {
+      const r = await fetch(api('sendPhoto'), { method: 'POST', body: montarForm() })
+      const j = await r.json().catch(() => ({}))
+      if (r.ok && j.ok) return { chatId: j.result.chat.id, messageId: j.result.message_id }
+      ultimoErro = JSON.stringify(j).slice(0, 200)
+      // 4xx (menos 429) é definitivo — não repete.
+      if (r.status >= 400 && r.status < 500 && r.status !== 429) break
+    } catch (e) {
+      ultimoErro = e?.message || String(e)
+    }
+    if (i < tentativas) await new Promise((res) => setTimeout(res, 3000 * i))
+  }
+  throw new Error(`sendPhoto: ${ultimoErro}`)
 }
 
 export async function getUpdates(offset) {
