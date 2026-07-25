@@ -28,7 +28,7 @@ Responda em JSON com estas chaves (todas string):
 - "cta": chamada para ação curta.
 - "caption": legenda do post (2 a 5 linhas), SEM hashtags e SEM repetir a headline literalmente. No máximo 1 emoji.
 - "hashtags": 4 a 8 hashtags de RH separadas por espaço, incluindo #PeopleHub.
-- "imagePrompt": descrição EM INGLÊS de uma imagem de FUNDO — fotográfica ou ilustração corporativa moderna, clean, com espaço negativo (sobretudo na metade inferior) para texto, paleta azul-marinho (#1e3a5f) e coral (#ff6b57). SEM nenhum texto/letra na imagem. Estilo: modern corporate, soft lighting, minimal.`
+- "imagePrompt": descrição EM INGLÊS da CENA de fundo, específica e conectada ao tema (1 a 2 frases, concreta e visual). Escolha o formato que melhor combina com ESTE post: use "modern flat vector illustration" para cenas de pessoas/trabalho de RH, OU "abstract geometric composition, no people" para algo mais conceitual/minimalista. Coloque o ponto de interesse na parte de CIMA/centro e deixe a parte de BAIXO calma e vazia (é onde entra o texto). NÃO descreva texto, números, logos nem telas de interface — só a cena.`
 
   try {
     const resp = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -67,7 +67,7 @@ Responda em JSON com estas chaves (todas string):
 }
 
 function fundoPadrao() {
-  return 'modern corporate abstract background, navy blue (#1e3a5f) and coral (#ff6b57), soft lighting, minimal, generous negative space especially in the lower half, no text, no letters'
+  return 'abstract geometric composition, no people, flowing rounded shapes, soft gradients and gentle light, visual interest in the upper area'
 }
 
 function fallback(pilar, tipo) {

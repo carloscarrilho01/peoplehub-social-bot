@@ -10,6 +10,12 @@ const NAVY = '#0f1c2e'
 const NAVY_600 = '#1e3a5f'
 const CORAL = '#ff6b57'
 const CORAL_LIGHT = '#ff9d88'
+const WHATS_GREEN = '#25D366'
+
+// Nos stories com CTA genérico ("saiba mais/toque aqui"), o botão vira um
+// chamado ao WhatsApp que fica no LINK DA BIO — porque a API do Instagram não
+// deixa colocar sticker de link clicável direto no story. O link clicável mora
+// na bio do @peoplehubrh; a arte só direciona pra lá.
 
 // Identidade visual do PeopleHub: títulos/wordmark em Bricolage Grotesque
 // (display) e apoio/UI em Inter — as mesmas fontes do app. Os arquivos ficam
@@ -29,6 +35,12 @@ try {
 
 const HANDLE = () => process.env.IG_HANDLE || '@peoplehub'
 
+// "Selo de estilo" da marca, anexado a TODO prompt de imagem — garante paleta,
+// luz, composição (parte de baixo limpa pro texto) e uma lista forte de coisas
+// a evitar. A IA varia só a cena; o estilo fica coeso no feed inteiro.
+const PROMPT_ESTILO =
+  '. Brand art direction: deep navy setting (#0f1c2e and #1e3a5f) with warm coral (#ff6b57) accents, cohesive color grading, soft cinematic lighting, clean, minimal, modern, premium and professional, sharp and high quality. Composition: keep the main subject in the upper two-thirds; the lower third must stay calm, dark and empty for a text overlay; generous negative space. Absolutely NO text, no letters, no numbers, no logos, no watermark, no UI or app screens, no charts, no frames or borders, no distorted hands or faces.'
+
 // Gera o fundo com a IA de imagem da OpenAI (gpt-image-1). Retorna Buffer ou
 // null. Tenta algumas vezes porque a API às vezes devolve erro transitório
 // (ex: 520 do Cloudflare).
@@ -42,7 +54,7 @@ async function gerarFundoIA(imagePrompt, tipo, tentativas = 3) {
       const resp = await fetch('https://api.openai.com/v1/images/generations', {
         method: 'POST',
         headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'gpt-image-1', prompt: imagePrompt, size, n: 1, output_format: 'jpeg', quality: 'medium' }),
+        body: JSON.stringify({ model: 'gpt-image-1', prompt: `${imagePrompt}${PROMPT_ESTILO}`, size, n: 1, output_format: 'jpeg', quality: 'medium' }),
         signal: AbortSignal.timeout(120_000),
       })
       if (resp.ok) {
@@ -138,8 +150,10 @@ export async function comporArte(briefing, tipo) {
 
   let y = H - pad - ctaH
 
-  // CTA + handle
-  desenharCtaEhandle(ctx, pad, y, briefing.cta, tipo)
+  // CTA + handle. Nos stories com CTA genérico (saiba mais/toque aqui), vira
+  // um botão de WhatsApp com o número.
+  const usarWhats = tipo === 'story' && ehCtaGenerico(briefing.cta)
+  desenharCtaEhandle(ctx, pad, y, briefing.cta, usarWhats)
 
   // Subheadline
   if (briefing.subheadline) {
@@ -215,13 +229,38 @@ function desenharWordmark(ctx, x, y) {
   ctx.fillText('Hub', tx + wPeople, ty)
 }
 
-function desenharCtaEhandle(ctx, x, y, cta, _tipo) {
+// CTA genérico = pede "saiba mais/toque aqui/..." e por isso vira WhatsApp.
+function ehCtaGenerico(cta) {
+  if (!cta) return true
+  return /saiba|toque|arraste|clique|acesse|confira|link|bio|mais|contato|fale|whats/i.test(cta)
+}
+
+function desenharCtaEhandle(ctx, x, y, cta, whatsapp) {
+  const h = 68
+  const padX = 34
+
+  if (whatsapp) {
+    // Botão verde "Fale no WhatsApp" apontando pro link da bio (clicável lá).
+    const texto = 'Fale no WhatsApp'
+    ctx.font = `600 32px ${FONT_BODY}`
+    const w = ctx.measureText(texto).width + padX * 2
+    ctx.fillStyle = WHATS_GREEN
+    roundRect(ctx, x, y, w, h, h / 2)
+    ctx.fill()
+    ctx.fillStyle = '#ffffff'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(texto, x + padX, y + h / 2 + 2)
+    ctx.textBaseline = 'alphabetic'
+    ctx.font = `600 30px ${FONT_BODY}`
+    ctx.fillStyle = 'rgba(255,255,255,0.85)'
+    ctx.fillText('no link da bio', x + w + 24, y + 44)
+    return
+  }
+
   let cursor = x
   if (cta) {
     ctx.font = `600 32px ${FONT_BODY}`
-    const padX = 34
     const w = ctx.measureText(cta).width + padX * 2
-    const h = 68
     ctx.fillStyle = CORAL
     roundRect(ctx, x, y, w, h, h / 2)
     ctx.fill()
