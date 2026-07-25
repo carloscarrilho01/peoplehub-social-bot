@@ -42,7 +42,7 @@ async function gerarFundoIA(imagePrompt, tipo, tentativas = 3) {
       const resp = await fetch('https://api.openai.com/v1/images/generations', {
         method: 'POST',
         headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'gpt-image-1', prompt: imagePrompt, size, n: 1, output_format: 'jpeg' }),
+        body: JSON.stringify({ model: 'gpt-image-1', prompt: imagePrompt, size, n: 1, output_format: 'jpeg', quality: 'medium' }),
         signal: AbortSignal.timeout(120_000),
       })
       if (resp.ok) {
