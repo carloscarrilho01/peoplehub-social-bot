@@ -1,0 +1,6 @@
+node_modules/
+.env
+posts/_preview_*
+posts/_smoke*
+posts/_font_*
+posts/_bg_*

@@ -1,0 +1,18 @@
+{
+  "name": "peoplehub-social-bot",
+  "version": "1.0.0",
+  "description": "Robô que gera posts (feed + stories) sobre o PeopleHub, manda no Telegram para aprovação e publica no Instagram ao aprovar.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "gerar": "node src/generate.mjs",
+    "aprovar": "node src/poll.mjs",
+    "preview": "node preview.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@napi-rs/canvas": "^0.1.60"
+  }
+}
