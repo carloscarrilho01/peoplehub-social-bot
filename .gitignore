@@ -4,3 +4,6 @@ posts/_preview_*
 posts/_smoke*
 posts/_font_*
 posts/_bg_*
+
+.vercel
+.env*
